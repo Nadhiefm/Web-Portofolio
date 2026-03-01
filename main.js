@@ -1,286 +1,628 @@
-<!DOCTYPE html>
-<html lang="id">
+/**
+ * ============================================================
+ *  MAIN.JS — Logika Interaktivitas Website Portofolio
+ * ============================================================
+ *  File ini menangani:
+ *  1. Loader
+ *  2. Rendering konten dari data.js
+ *  3. Navbar (scroll, mobile toggle, active link)
+ *  4. Typing effect (hero section)
+ *  5. Scroll reveal animations (IntersectionObserver)
+ *  6. Skill bar animation
+ *  7. Particles (hero background)
+ *  8. Portfolio filter
+ *  9. Contact form validation
+ * 10. Back to top
+ *
+ *  TIDAK PERLU mengedit file ini untuk update konten.
+ *  Semua konten diambil dari data.js (PORTFOLIO_DATA).
+ * ============================================================
+ */
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Portofolio personal Nadhief Musyaffa Musyaffa — Mahasiswa & Web Developer" />
-  <meta name="keywords" content="portofolio, web developer, mahasiswa, HTML, CSS, JavaScript" />
-  <meta name="author" content="Nadhief Musyaffa Musyaffa" />
+/* ─────────── Tunggu DOM siap ─────────── */
+document.addEventListener("DOMContentLoaded", () => {
+    initLoader();
+    renderNavigation();
+    renderHero();
+    renderProfile();
+    renderSkills();
+    renderInterests();
+    renderAssignments();
+    renderProjects();
+    renderOrganizations();
+    renderContact();
+    renderFooter();
+    initNavbar();
+    initTypingEffect();
+    initScrollReveal();
+    initParticles();
+    initPortfolioFilter();
+    initContactForm();
+    initBackToTop();
+});
 
-  <title>Nadhief Musyaffa — Portfolio</title>
 
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-    rel="stylesheet" />
+/* ══════════════════════════════════════════
+ *  1. LOADER
+ * ══════════════════════════════════════════ */
+function initLoader() {
+    const loader = document.getElementById("loader");
+    window.addEventListener("load", () => {
+        setTimeout(() => {
+            loader.classList.add("hidden");
+        }, 600);
+    });
+}
 
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css" />
-</head>
+/* ══════════════════════════════════════════
+ *  2. RENDER FUNCTIONS — Konten dari data.js
+ * ══════════════════════════════════════════ */
 
-<body>
+/** Navigasi */
+function renderNavigation() {
+    const menu = document.getElementById("navMenu");
+    const logoText = document.getElementById("navLogoText");
+    if (logoText) logoText.textContent = PORTFOLIO_DATA.personal.name;
 
-  <!-- ============================================================
-       LOADER — Tampilan loading saat halaman pertama kali dibuka
-       ============================================================ -->
-  <div id="loader" class="loader">
-    <div class="loader__spinner"></div>
-    <p class="loader__text">Memuat...</p>
-  </div>
+    PORTFOLIO_DATA.navigation.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "navbar__menu-item";
+        li.innerHTML = `<a href="${item.href}">${item.label}</a>`;
+        menu.appendChild(li);
+    });
+}
 
-  <!-- ============================================================
-       NAVBAR — Navigasi utama (sticky, berubah saat scroll)
-       Konten dirender secara dinamis dari data.js
-       ============================================================ -->
-  <nav id="navbar" class="navbar">
-    <div class="container navbar__inner">
-      <!-- Logo / Nama -->
-      <a href="#beranda" class="navbar__logo" id="navLogo">
-        <span class="navbar__logo-icon">&lt;/&gt;</span>
-        <span class="navbar__logo-text" id="navLogoText">Nadhief Musyaffa Musyaffa</span>
-      </a>
+/** Hero / Beranda */
+function renderHero() {
+    const d = PORTFOLIO_DATA;
+    setText("heroGreeting", d.hero.greeting);
+    setText("heroName", d.personal.name);
+    setText("heroSubtitle", d.hero.subtitle);
 
-      <!-- Menu Links — diisi oleh main.js -->
-      <ul class="navbar__menu" id="navMenu"></ul>
+    const ctaEl = document.getElementById("heroCta");
+    if (ctaEl) {
+        ctaEl.innerHTML = `
+      <a href="${d.hero.ctaPrimary.href}" class="btn btn--primary">${d.hero.ctaPrimary.text}</a>
+      <a href="${d.hero.ctaSecondary.href}" class="btn btn--outline">${d.hero.ctaSecondary.text}</a>
+    `;
+    }
+}
 
-      <!-- Hamburger tombol untuk mobile -->
-      <button class="navbar__toggle" id="navToggle" aria-label="Toggle menu">
-        <span class="navbar__toggle-line"></span>
-        <span class="navbar__toggle-line"></span>
-        <span class="navbar__toggle-line"></span>
-      </button>
-    </div>
-  </nav>
+/** Profil Diri — Bento Grid */
+function renderProfile() {
+    const d = PORTFOLIO_DATA.personal;
+    const c = PORTFOLIO_DATA.contact;
 
-  <!-- ============================================================
-       HERO / BERANDA — Section pertama, full viewport
-       ============================================================ -->
-  <section id="beranda" class="hero">
-    <div class="hero__particles" id="heroParticles"></div>
-    <div class="container hero__content">
-      <p class="hero__greeting reveal-up" id="heroGreeting">Halo, Saya</p>
-      <h1 class="hero__name reveal-up" id="heroName">Nadhief Musyaffa Musyaffa</h1>
-      <div class="hero__typing-wrapper reveal-up">
-        <span class="hero__typing-prefix">Seorang </span>
-        <span class="hero__typing-text" id="heroTyping"></span>
-        <span class="hero__typing-cursor">|</span>
-      </div>
-      <p class="hero__subtitle reveal-up" id="heroSubtitle"></p>
-      <div class="hero__cta reveal-up" id="heroCta"></div>
-    </div>
-    <a href="#profil" class="hero__scroll-indicator" aria-label="Scroll ke bawah">
-      <div class="hero__scroll-mouse">
-        <div class="hero__scroll-wheel"></div>
-      </div>
-      <span>Scroll ke bawah</span>
-    </a>
-  </section>
+    // Avatar: gunakan gambar jika ada, jika tidak tampilkan inisial
+    const avatarEl = document.getElementById("profilAvatar");
+    if (avatarEl) {
+        if (d.avatarUrl) {
+            avatarEl.innerHTML = `<img src="${d.avatarUrl}" alt="${d.name}" />`;
+        } else {
+            avatarEl.textContent = d.name.charAt(0).toUpperCase();
+        }
+    }
 
-  <!-- ============================================================
-       PROFIL DIRI — Bento Grid Layout
-       Informasi personal ditampilkan dalam grid card modern
-       ============================================================ -->
-  <section id="profil" class="section profil">
-    <div class="container">
-      <h2 class="section__title reveal-up">
-        <span class="section__title-icon"><i class="fas fa-user"></i></span>
-        Profil Diri
-      </h2>
-      <p class="section__subtitle reveal-up">Mengenal lebih dekat tentang saya</p>
+    // Nama dan title di avatar card
+    setText("profilName", d.name);
+    setText("profilTitle", d.title);
 
-      <!-- Bento Grid -->
-      <div class="profil__bento">
+    // Social links di avatar card
+    const socialEl = document.getElementById("profilSocial");
+    if (socialEl && c.socialMedia) {
+        c.socialMedia.forEach(s => {
+            socialEl.innerHTML += `
+        <a href="${s.url}" target="_blank" rel="noopener" title="${s.platform}">
+          <i class="${s.icon}"></i>
+        </a>
+      `;
+        });
+    }
 
-        <!-- Card 1: Avatar + Nama (tall card, spans 2 rows) -->
-        <div class="profil__bento-card profil__bento-card--avatar reveal-up">
-          <div class="profil__bento-avatar" id="profilAvatar">
-            <!-- Diisi oleh JS: gambar atau inisial -->
-          </div>
-          <h3 class="profil__bento-name" id="profilName"></h3>
-          <p class="profil__bento-title" id="profilTitle"></p>
-          <div class="profil__bento-social" id="profilSocial">
-            <!-- Diisi oleh JS -->
-          </div>
-        </div>
+    // Bio
+    setText("profilBio", d.bio);
 
-        <!-- Card 2: Bio (wide card) -->
-        <div class="profil__bento-card profil__bento-card--bio reveal-up">
-          <div class="profil__bento-card-header">
-            <i class="fas fa-quote-left"></i>
-            <span>Tentang Saya</span>
-          </div>
-          <p class="profil__bento-bio" id="profilBio"></p>
-        </div>
-
-        <!-- Card 3: Detail cards — dirender oleh main.js -->
-        <div class="profil__bento-card profil__bento-card--details reveal-up" id="profilDetails">
-          <!-- Detail items dirender oleh main.js -->
-        </div>
-
-        <!-- Card 4: Statistik ringkas -->
-        <div class="profil__bento-card profil__bento-card--stats reveal-up">
-          <div class="profil__bento-stat">
-            <span class="profil__bento-stat-number" data-count="3">0</span>
-            <span class="profil__bento-stat-label">Proyek</span>
-          </div>
-          <div class="profil__bento-stat">
-            <span class="profil__bento-stat-number" data-count="4">0</span>
-            <span class="profil__bento-stat-label">Skill</span>
-          </div>
-          <div class="profil__bento-stat">
-            <span class="profil__bento-stat-number" data-count="2">0</span>
-            <span class="profil__bento-stat-label">Organisasi</span>
+    // Detail items (new class name for bento)
+    const detailsEl = document.getElementById("profilDetails");
+    if (detailsEl) {
+        d.details.forEach(item => {
+            detailsEl.innerHTML += `
+        <div class="profil__detail-item">
+          <div class="profil__detail-icon"><i class="${item.icon}"></i></div>
+          <div>
+            <div class="profil__detail-label">${item.label}</div>
+            <div class="profil__detail-value">${item.value}</div>
           </div>
         </div>
+      `;
+        });
+    }
 
+    // Resume button
+    const resumeBtn = document.getElementById("profilResumeBtn");
+    if (resumeBtn) resumeBtn.href = d.resumeUrl;
 
+    // Animasi counter pada statistik
+    initStatCounters();
+}
 
+/** Animasi counter angka pada profil stats */
+function initStatCounters() {
+    const counters = document.querySelectorAll(".profil__bento-stat-number");
+    if (!counters.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const el = entry.target;
+                const target = parseInt(el.dataset.count, 10);
+                let current = 0;
+                const duration = 1500;
+                const step = Math.max(1, Math.floor(target / (duration / 50)));
+
+                const timer = setInterval(() => {
+                    current += step;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    el.textContent = current;
+                }, 50);
+
+                observer.unobserve(el);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    counters.forEach(c => observer.observe(c));
+}
+
+/** Skill */
+function renderSkills() {
+    const grid = document.getElementById("skillGrid");
+    if (!grid) return;
+
+    grid.classList.add("stagger-children");
+
+    PORTFOLIO_DATA.skills.forEach(skill => {
+        const div = document.createElement("div");
+        div.className = "skill__item reveal-up";
+        div.innerHTML = `
+      <div class="skill__header">
+        <div class="skill__name-wrapper">
+          <span class="skill__icon" style="color: ${skill.color}"><i class="${skill.icon}"></i></span>
+          <span class="skill__name">${skill.name}</span>
+        </div>
       </div>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       SKILL / MINAT — Kemampuan dan bidang minat
-       ============================================================ -->
-  <section id="skill" class="section skill">
-    <div class="container">
-      <h2 class="section__title reveal-up">
-        <span class="section__title-icon"><i class="fas fa-code"></i></span>
-        Skill & Minat
-      </h2>
-      <p class="section__subtitle reveal-up">Kemampuan teknis dan bidang ketertarikan saya</p>
-
-      <!-- Skill bars -->
-      <div class="skill__grid" id="skillGrid">
-        <!-- Dirender oleh main.js -->
+      <div class="skill__bar">
+        <div class="skill__bar-fill" data-level="${skill.level}" style="background: linear-gradient(90deg, ${skill.color}, ${adjustColor(skill.color, 30)})"></div>
       </div>
+    `;
+        grid.appendChild(div);
+    });
+}
 
-      <!-- Minat -->
-      <h3 class="skill__interest-title reveal-up">Bidang Minat</h3>
-      <div class="skill__interests" id="interestGrid">
-        <!-- Dirender oleh main.js -->
+/** Minat / Interest */
+function renderInterests() {
+    const grid = document.getElementById("interestGrid");
+    if (!grid) return;
+
+    grid.classList.add("stagger-children");
+
+    PORTFOLIO_DATA.interests.forEach(interest => {
+        const div = document.createElement("div");
+        div.className = "skill__interest-card reveal-scale";
+        div.innerHTML = `
+      <div class="skill__interest-icon"><i class="${interest.icon}"></i></div>
+      <div class="skill__interest-name">${interest.name}</div>
+    `;
+        grid.appendChild(div);
+    });
+}
+
+/** Penugasan */
+function renderAssignments() {
+    const grid = document.getElementById("penugasanGrid");
+    if (!grid) return;
+
+    grid.classList.add("stagger-children");
+
+    PORTFOLIO_DATA.assignments.forEach(a => {
+        const div = document.createElement("div");
+        div.className = "penugasan__card reveal-up";
+
+        let actionBtn = "";
+        if (a.actionType === "download") {
+            actionBtn = `<a href="${a.link}" download class="penugasan__card-link penugasan__card-link--download">
+                <i class="fas fa-download"></i> Download PDF
+            </a>`;
+        } else if (a.actionType === "view") {
+            actionBtn = `<a href="${a.link}" class="penugasan__card-link penugasan__card-link--view">
+                <i class="fas fa-eye"></i> View Full File
+            </a>`;
+        } else if (a.actionType === "youtube") {
+            actionBtn = `<a href="${a.link}" target="_blank" rel="noopener noreferrer" class="penugasan__card-link penugasan__card-link--youtube">
+                <i class="fab fa-youtube"></i> Tonton Video
+            </a>`;
+        }
+
+        div.innerHTML = `
+      <div class="penugasan__card-icon"><i class="${a.icon}"></i></div>
+      <div class="penugasan__card-number">Tugas ${a.id}</div>
+      <h3 class="penugasan__card-title">${a.title}</h3>
+      ${actionBtn}
+    `;
+        grid.appendChild(div);
+    });
+}
+
+/** Portofolio / Proyek */
+function renderProjects() {
+    const grid = document.getElementById("portofolioGrid");
+    if (!grid) return;
+
+    grid.classList.add("stagger-children");
+
+    PORTFOLIO_DATA.projects.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "portofolio__card reveal-scale";
+        div.dataset.category = p.category;
+
+        const imageContent = p.image
+            ? `<img src="${p.image}" alt="${p.title}" />`
+            : `<i class="fas fa-code"></i>`;
+
+        div.innerHTML = `
+      <div class="portofolio__card-image">
+        ${imageContent}
       </div>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       PENUGASAN — Tugas 2, 3, dan 4
-       ============================================================ -->
-  <section id="penugasan" class="section penugasan">
-    <div class="container">
-      <h2 class="section__title reveal-up">
-        <span class="section__title-icon"><i class="fas fa-tasks"></i></span>
-        Penugasan
-      </h2>
-      <p class="section__subtitle reveal-up">Kumpulan tugas yang telah saya kerjakan</p>
-
-      <div class="penugasan__grid" id="penugasanGrid">
-        <!-- Dirender oleh main.js -->
+      <div class="portofolio__card-body">
+        <h3 class="portofolio__card-title">${p.title}</h3>
+        <p class="portofolio__card-desc">${p.description}</p>
+        <div class="portofolio__card-tags">
+          ${p.tags.map(t => `<span class="portofolio__card-tag">${t}</span>`).join("")}
+        </div>
       </div>
-    </div>
-  </section>
+    `;
+        grid.appendChild(div);
+    });
+}
 
-  <!-- ============================================================
-       PORTOFOLIO / PROYEK — Galeri proyek
-       ============================================================ -->
-  <section id="portofolio" class="section portofolio">
-    <div class="container">
-      <h2 class="section__title reveal-up">
-        <span class="section__title-icon"><i class="fas fa-briefcase"></i></span>
-        Portofolio
-      </h2>
-      <p class="section__subtitle reveal-up">Proyek dan karya yang pernah saya buat</p>
+/** Organisasi */
+function renderOrganizations() {
+    const grid = document.getElementById("orgGrid");
+    if (!grid) return;
 
-      <!-- Filter buttons -->
-      <div class="portofolio__filters reveal-up" id="portofolioFilters">
-        <button class="portofolio__filter-btn active" data-filter="all">Semua</button>
-        <button class="portofolio__filter-btn" data-filter="web">Web</button>
+    grid.classList.add("stagger-children");
+
+    PORTFOLIO_DATA.organizations.forEach(o => {
+        const div = document.createElement("div");
+        div.className = "portofolio__org-card reveal-up";
+        div.innerHTML = `
+      <div class="portofolio__org-icon"><i class="${o.icon}"></i></div>
+      <div>
+        <div class="portofolio__org-name">${o.name}</div>
+        <div class="portofolio__org-role">${o.role}</div>
+        <div class="portofolio__org-period">${o.period}</div>
+        <p class="portofolio__org-desc">${o.description}</p>
       </div>
+    `;
+        grid.appendChild(div);
+    });
+}
 
-      <div class="portofolio__grid" id="portofolioGrid">
-        <!-- Dirender oleh main.js -->
-      </div>
+/** Kontak */
+function renderContact() {
+    const d = PORTFOLIO_DATA.contact;
 
-      <!-- Organisasi -->
-      <h3 class="portofolio__org-title reveal-up">Riwayat Organisasi</h3>
-      <div class="portofolio__org-grid" id="orgGrid">
-        <!-- Dirender oleh main.js -->
-      </div>
-    </div>
-  </section>
+    // Info cards
+    const infoEl = document.getElementById("kontakInfoCards");
+    if (infoEl) {
+        const infoItems = [
+            { icon: "fas fa-envelope", label: "Email", value: d.email },
+            { icon: "fas fa-phone", label: "Telepon", value: d.phone },
+            { icon: "fas fa-map-marker-alt", label: "Lokasi", value: d.location },
+        ];
 
-  <!-- ============================================================
-       KONTAK — Form kontak dan sosial media
-       ============================================================ -->
-  <section id="kontak" class="section kontak">
-    <div class="container">
-      <h2 class="section__title reveal-up">
-        <span class="section__title-icon"><i class="fas fa-envelope"></i></span>
-        Kontak
-      </h2>
-      <p class="section__subtitle reveal-up">Jangan ragu untuk menghubungi saya</p>
-
-      <div class="kontak__grid">
-        <!-- Info kontak -->
-        <div class="kontak__info reveal-left">
-          <div class="kontak__info-card" id="kontakInfoCards">
-            <!-- Dirender oleh main.js -->
-          </div>
-
-          <!-- Social media links -->
-          <div class="kontak__social" id="kontakSocial">
-            <!-- Dirender oleh main.js -->
+        infoItems.forEach(item => {
+            infoEl.innerHTML += `
+        <div class="kontak__info-item">
+          <div class="kontak__info-icon"><i class="${item.icon}"></i></div>
+          <div>
+            <div class="kontak__info-label">${item.label}</div>
+            <div class="kontak__info-value">${item.value}</div>
           </div>
         </div>
+      `;
+        });
+    }
 
-        <!-- Form kontak -->
-        <form class="kontak__form reveal-right" id="kontakForm">
-          <div class="kontak__form-group">
-            <label for="contactName">Nama Lengkap</label>
-            <input type="text" id="contactName" name="name" placeholder="Masukkan nama Anda" required />
-          </div>
-          <div class="kontak__form-group">
-            <label for="contactEmail">Email</label>
-            <input type="email" id="contactEmail" name="email" placeholder="Masukkan email Anda" required />
-          </div>
-          <div class="kontak__form-group">
-            <label for="contactSubject">Subjek</label>
-            <input type="text" id="contactSubject" name="subject" placeholder="Subjek pesan" required />
-          </div>
-          <div class="kontak__form-group">
-            <label for="contactMessage">Pesan</label>
-            <textarea id="contactMessage" name="message" rows="5" placeholder="Tulis pesan Anda..." required></textarea>
-          </div>
-          <button type="submit" class="btn btn--primary kontak__submit-btn">
-            <i class="fas fa-paper-plane"></i> Kirim Pesan
-          </button>
-          <p class="kontak__form-feedback" id="formFeedback"></p>
-        </form>
-      </div>
-    </div>
-  </section>
+    // Social media
+    const socialEl = document.getElementById("kontakSocial");
+    if (socialEl) {
+        d.socialMedia.forEach(s => {
+            socialEl.innerHTML += `
+        <a href="${s.url}" class="kontak__social-link" target="_blank" rel="noopener" title="${s.platform}">
+          <i class="${s.icon}"></i>
+        </a>
+      `;
+        });
+    }
+}
 
-  <!-- ============================================================
-       FOOTER
-       ============================================================ -->
-  <footer class="footer">
-    <div class="container footer__inner">
-      <p class="footer__copyright" id="footerCopyright"></p>
-      <p class="footer__tagline" id="footerTagline"></p>
-      <button class="footer__back-to-top" id="backToTop" aria-label="Kembali ke atas">
-        <i class="fas fa-chevron-up"></i>
-      </button>
-    </div>
-  </footer>
+/** Footer */
+function renderFooter() {
+    const d = PORTFOLIO_DATA.footer;
+    setText("footerCopyright", d.copyright);
+    setText("footerTagline", d.tagline);
+}
 
-  <!-- Scripts — data.js harus dimuat sebelum main.js -->
-  <script src="data.js"></script>
-  <script src="main.js"></script>
-</body>
 
-</html>
+/* ══════════════════════════════════════════
+ *  3. NAVBAR — Scroll effect + Mobile toggle
+ * ══════════════════════════════════════════ */
+function initNavbar() {
+    const navbar = document.getElementById("navbar");
+    const toggle = document.getElementById("navToggle");
+    const menu = document.getElementById("navMenu");
+
+    // Scroll — tambahkan background saat discroll
+    window.addEventListener("scroll", () => {
+        navbar.classList.toggle("scrolled", window.scrollY > 50);
+        updateActiveNavLink();
+    });
+
+    // Mobile hamburger toggle
+    toggle.addEventListener("click", () => {
+        toggle.classList.toggle("open");
+        menu.classList.toggle("open");
+    });
+
+    // Tutup menu mobile saat klik link
+    menu.addEventListener("click", (e) => {
+        if (e.target.tagName === "A") {
+            toggle.classList.remove("open");
+            menu.classList.remove("open");
+        }
+    });
+}
+
+/** Highlight link navigasi aktif berdasarkan posisi scroll */
+function updateActiveNavLink() {
+    const sections = document.querySelectorAll(".section, .hero");
+    const links = document.querySelectorAll(".navbar__menu-item a");
+    let current = "";
+
+    sections.forEach(section => {
+        const top = section.offsetTop - 120;
+        if (window.scrollY >= top) {
+            current = section.getAttribute("id");
+        }
+    });
+
+    links.forEach(link => {
+        link.classList.remove("active");
+        if (link.getAttribute("href") === `#${current}`) {
+            link.classList.add("active");
+        }
+    });
+}
+
+
+/* ══════════════════════════════════════════
+ *  4. TYPING EFFECT
+ * ══════════════════════════════════════════ */
+function initTypingEffect() {
+    const el = document.getElementById("heroTyping");
+    if (!el) return;
+
+    const words = PORTFOLIO_DATA.hero.typingWords;
+    let wordIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    let delay = 120;
+
+    function type() {
+        const currentWord = words[wordIndex];
+
+        if (isDeleting) {
+            el.textContent = currentWord.substring(0, charIndex - 1);
+            charIndex--;
+            delay = 60;
+        } else {
+            el.textContent = currentWord.substring(0, charIndex + 1);
+            charIndex++;
+            delay = 120;
+        }
+
+        // Selesai mengetik kata
+        if (!isDeleting && charIndex === currentWord.length) {
+            delay = 2000; // Jeda sebelum menghapus
+            isDeleting = true;
+        }
+
+        // Selesai menghapus kata
+        if (isDeleting && charIndex === 0) {
+            isDeleting = false;
+            wordIndex = (wordIndex + 1) % words.length;
+            delay = 300;
+        }
+
+        setTimeout(type, delay);
+    }
+
+    type();
+}
+
+
+/* ══════════════════════════════════════════
+ *  5. SCROLL REVEAL — IntersectionObserver
+ * ══════════════════════════════════════════ */
+function initScrollReveal() {
+    const reveals = document.querySelectorAll(
+        ".reveal-up, .reveal-left, .reveal-right, .reveal-scale"
+    );
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("visible");
+
+                    // Animasi skill bar saat masuk viewport
+                    const bars = entry.target.querySelectorAll(".skill__bar-fill");
+                    bars.forEach(bar => {
+                        bar.style.width = bar.dataset.level + "%";
+                    });
+                }
+            });
+        },
+        { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+
+    reveals.forEach(el => observer.observe(el));
+
+    // Juga observe skill items langsung (bukan hanya child bars)
+    document.querySelectorAll(".skill__item").forEach(item => {
+        observer.observe(item);
+    });
+}
+
+
+/* ══════════════════════════════════════════
+ *  6. PARTICLES — Background hero
+ * ══════════════════════════════════════════ */
+function initParticles() {
+    const container = document.getElementById("heroParticles");
+    if (!container) return;
+
+    const count = 30;
+    for (let i = 0; i < count; i++) {
+        const particle = document.createElement("div");
+        particle.className = "hero__particle";
+        particle.style.left = Math.random() * 100 + "%";
+        particle.style.top = Math.random() * 100 + "%";
+        particle.style.animationDelay = Math.random() * 6 + "s";
+        particle.style.animationDuration = (4 + Math.random() * 4) + "s";
+        particle.style.width = (2 + Math.random() * 4) + "px";
+        particle.style.height = particle.style.width;
+        container.appendChild(particle);
+    }
+}
+
+
+/* ══════════════════════════════════════════
+ *  7. PORTFOLIO FILTER
+ * ══════════════════════════════════════════ */
+function initPortfolioFilter() {
+    const filterBtns = document.querySelectorAll(".portofolio__filter-btn");
+    const cards = document.querySelectorAll(".portofolio__card");
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            // Update active button
+            filterBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const filter = btn.dataset.filter;
+
+            cards.forEach(card => {
+                if (filter === "all" || card.dataset.category === filter) {
+                    card.style.display = "";
+                    card.style.opacity = "1";
+                    card.style.transform = "scale(1)";
+                } else {
+                    card.style.opacity = "0";
+                    card.style.transform = "scale(0.8)";
+                    setTimeout(() => { card.style.display = "none"; }, 300);
+                }
+            });
+        });
+    });
+}
+
+
+/* ══════════════════════════════════════════
+ *  8. CONTACT FORM VALIDATION
+ * ══════════════════════════════════════════ */
+function initContactForm() {
+    const form = document.getElementById("kontakForm");
+    const feedback = document.getElementById("formFeedback");
+    if (!form) return;
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const name = form.querySelector("#contactName").value.trim();
+        const email = form.querySelector("#contactEmail").value.trim();
+        const subject = form.querySelector("#contactSubject").value.trim();
+        const message = form.querySelector("#contactMessage").value.trim();
+
+        // Validasi
+        if (!name || !email || !subject || !message) {
+            showFeedback(feedback, "Mohon isi semua field.", "error");
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            showFeedback(feedback, "Format email tidak valid.", "error");
+            return;
+        }
+
+        // Simulasi pengiriman (untuk demo)
+        showFeedback(feedback, "✅ Pesan berhasil dikirim! Terima kasih.", "success");
+        form.reset();
+
+        // Hapus feedback setelah 5 detik
+        setTimeout(() => {
+            feedback.textContent = "";
+            feedback.className = "kontak__form-feedback";
+        }, 5000);
+    });
+}
+
+
+/* ══════════════════════════════════════════
+ *  9. BACK TO TOP
+ * ══════════════════════════════════════════ */
+function initBackToTop() {
+    const btn = document.getElementById("backToTop");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+}
+
+
+/* ══════════════════════════════════════════
+ *  UTILITY FUNCTIONS
+ * ══════════════════════════════════════════ */
+
+/** Set text content safely */
+function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+
+/** Validasi format email */
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/** Show feedback message */
+function showFeedback(el, message, type) {
+    el.textContent = message;
+    el.className = "kontak__form-feedback " + type;
+}
+
+/** Mencerahkan warna hex */
+function adjustColor(hex, amount) {
+    hex = hex.replace("#", "");
+    const num = parseInt(hex, 16);
+    let r = Math.min(255, ((num >> 16) & 0xff) + amount);
+    let g = Math.min(255, ((num >> 8) & 0xff) + amount);
+    let b = Math.min(255, (num & 0xff) + amount);
+    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+}
